@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Encoder - Virtual Vinyl</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #3498db;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="file"],
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .loader::after {
+            content: "";
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        audio {
+            width: 100%;
+        }
+        .info {
+            background-color: #f0f7fb;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .song-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Encoder - Virtual Vinyl</h1>
+    
+    <div class="info">
+        <p>Welcome to Audio Encoder! This tool lets you create "virtual vinyl" by encoding audio into images. 
+        Here's how it works:</p>
+        <ul>
+            <li>Upload an audio file and a cover image</li>
+            <li>Add a song name or use the filename (optional)</li>
+            <li>The audio is encoded into the pixels of the image</li>
+            <li>Share the encoded image like a virtual vinyl</li>
+            <li>Anyone with the encoded image can decode and listen to the audio</li>
+        </ul>
+        <p>Note: Due to image size limitations, audio quality may be reduced for longer tracks.</p>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Encode Audio into Image</h2>
+            <form id="encodeForm">
+                <div>
+                    <label for="audioFile">Audio File:</label>
+                    <input type="file" id="audioFile" name="audio_file" accept="audio/*" required>
+                </div>
+                <div>
+                    <label for="coverImage">Cover Image:</label>
+                    <input type="file" id="coverImage" name="cover_image" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="songName">Song Name (optional):</label>
+                    <input type="text" id="songName" name="song_name" placeholder="Enter song name or leave blank to use filename">
+                </div>
+                <button type="submit">Encode</button>
+            </form>
+            <div class="loader" id="encodeLoader"></div>
+            <div class="result" id="encodeResult">
+                <h3>Encoded Image:</h3>
+                <img id="resultImage" src="" alt="Encoded image" style="max-width: 500px;" />
+                <div id="genrePrediction" style="margin-top: 15px;">
+                    <h4>Genre Prediction:</h4>
+                    <p>Genre: <span id="predictedGenre">-</span></p>
+                    <p>Confidence: <span id="genreConfidence">-</span></p>
+                </div>
+                <div class="button-container">
+                    <button onclick="downloadImage()">Download Image</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Decode Audio from Image</h2>
+            <form id="decodeForm">
+                <div>
+                    <label for="encodedImageFile">Encoded Image:</label>
+                    <input type="file" id="encodedImageFile" name="encoded_image" accept="image/*" required>
+                </div>
+                <button type="submit">Decode</button>
+            </form>
+            <div class="loader" id="decodeLoader"></div>
+            <div class="result" id="decodeResult">
+                <h3>Decoded Audio:</h3>
+                <div id="songNameDisplay" class="song-name"></div>
+                <div id="decodedGenreDisplay" class="genre"></div>
+                <audio id="decodedAudio" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle encode form submission
+        document.getElementById('encodeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const encodeLoader = document.getElementById('encodeLoader');
+            const encodeResult = document.getElementById('encodeResult');
+            const resultImage = document.getElementById('resultImage');
+            const predictedGenre = document.getElementById('predictedGenre');
+            const genreConfidence = document.getElementById('genreConfidence');
+            
+            encodeLoader.style.display = 'block';
+            encodeResult.style.display = 'none';
+            
+            try {
+                const response = await fetch('/encode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Encoding failed: ' + (await response.text()));
+                }
+                
+                const data = await response.json();
+                resultImage.src = data.encoded_image_url;
+                predictedGenre.textContent = data.genre || '-';
+                genreConfidence.textContent = data.confidence ? (data.confidence * 100).toFixed(2) + '%' : '-';
+                encodeResult.style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                encodeLoader.style.display = 'none';
+            }
+        });
+        
+        // Handle decode form submission
+        document.getElementById('decodeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const decodeLoader = document.getElementById('decodeLoader');
+            const decodeResult = document.getElementById('decodeResult');
+            const decodedAudio = document.getElementById('decodedAudio');
+            const songNameDisplay = document.getElementById('songNameDisplay');
+            
+            decodeLoader.style.display = 'block';
+            decodeResult.style.display = 'none';
+            
+            try {
+                const response = await fetch('/decode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Decoding failed: ' + (await response.text()));
+                }
+                
+                const data = await response.json();
+                decodedAudio.src = data.decoded_audio_url;
+                
+                // Display song name if available
+                if (data.song_name) {
+                    songNameDisplay.textContent = 'Song: ' + data.song_name;
+                    songNameDisplay.style.display = 'block';
+                } else {
+                    songNameDisplay.style.display = 'none';
+                }
+
+                // Display genre if available
+                const decodedGenreDisplay = document.getElementById('decodedGenreDisplay');
+                if (data.genre) {
+                    decodedGenreDisplay.textContent = 'Genre: ' + data.genre;
+                    decodedGenreDisplay.style.display = 'block';
+                } else {
+                    decodedGenreDisplay.style.display = 'none';
+                }
+                
+                decodeResult.style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                decodeLoader.style.display = 'none';
+            }
+        });
+        
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = resultImage.src;
+            link.download = 'virtual_vinyl.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
