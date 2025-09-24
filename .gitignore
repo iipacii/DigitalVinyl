@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.env
+venv/
+ENV/
+.env.*
+.venv/
+.virtualenv/
+.envs/
+.envs*/
+env/
+envs/
+Envs/
+Venvs/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynbZone.Identifier
+
+# VS Code
+.vscode/
+
+# Node.js / Next.js
+node_modules/
+.next/
+dist/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files
+*.pth
+
+# Audio files
+*.mp3
+
+# Misc
+*.sqlite3
+*.db
+
+# PDF
+*.pdf
+
+# Static uploads
+Backend/app/static/decoded/
+Backend/app/static/encoded/
+Backend/app/static/uploads/
