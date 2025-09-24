@@ -32,14 +32,24 @@ The project includes analysis of vinyl audio for emotional features, specificall
 
 ## Future Work
 
-- Expand the library with more vinyl samples and album covers
-- Improve audio encoding and retrieval methods
-- Develop user-friendly interfaces for browsing and playback
-- Explore real-time audio extraction from images
 
 ## Author
 
 Pranshu Acharya
 
----
 **Note:** This README was AI generated. For full details, methodology, and references, please refer to `PranshuAcharyaDSC550FinalReport.pdf`.
+## How to Run the Project
+
+### Frontend
+Navigate to the `Frontend` folder and run:
+
+```bash
+npm run dev
+```
+
+### Backend
+Navigate to the `Backend` folder and run:
+
+```bash
+python main.py
+```
